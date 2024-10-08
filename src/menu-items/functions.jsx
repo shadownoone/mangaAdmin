@@ -20,15 +20,15 @@ const functions = {
       type: 'item',
       url: '/manga',
       icon: icons.LoginOutlined,
-      target: true
+      target: false
     },
     {
-      id: 'genres',
-      title: 'Genres',
+      id: 'genre',
+      title: 'Genre',
       type: 'item',
-      url: '/genres',
+      url: '/genre',
       icon: icons.ProfileOutlined,
-      target: true
+      target: false
     }
   ]
 };

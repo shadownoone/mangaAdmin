@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+
 // material-ui
 import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
@@ -6,7 +7,7 @@ import Box from '@mui/material/Box';
 
 // project import
 import NavItem from './NavItem';
-import { useGetMenuMaster } from 'api/menu';
+import { useGetMenuMaster } from '@/api/menu';
 
 export default function NavGroup({ item }) {
   const { menuMaster } = useGetMenuMaster();

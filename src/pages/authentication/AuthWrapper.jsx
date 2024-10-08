@@ -5,12 +5,12 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 
 // project import
-import AuthFooter from 'components/cards/AuthFooter';
-import Logo from 'components/logo';
+import AuthFooter from '@/components/cards/AuthFooter';
+import Logo from '@/components/logo';
 import AuthCard from './AuthCard';
 
 // assets
-import AuthBackground from 'assets/images/auth/AuthBackground';
+import AuthBackground from '@/assets/images/auth/AuthBackground';
 
 // ==============================|| AUTHENTICATION - WRAPPER ||============================== //
 

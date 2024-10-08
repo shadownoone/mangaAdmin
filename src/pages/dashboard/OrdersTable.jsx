@@ -15,7 +15,7 @@ import Box from '@mui/material/Box';
 import { NumericFormat } from 'react-number-format';
 
 // project import
-import Dot from 'components/@extended/Dot';
+import Dot from '@/components/@extended/Dot';
 
 function createData(tracking_no, name, fat, carbs, protein) {
   return { tracking_no, name, fat, carbs, protein };

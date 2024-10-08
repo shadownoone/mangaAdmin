@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
 
-import { getCurrentUser } from '../../../../../service/userService/getUser';
+import { getCurrentUser } from '@/service/userService/getUser';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -22,15 +22,16 @@ import Box from '@mui/material/Box';
 // project import
 import ProfileTab from './ProfileTab';
 import SettingTab from './SettingTab';
-import Avatar from 'components/@extended/Avatar';
-import MainCard from 'components/MainCard';
-import Transitions from 'components/@extended/Transitions';
+import Avatar from '@/components/@extended/Avatar';
+import MainCard from '@/components/MainCard';
+import Transitions from '@/components/@extended/Transitions';
 
 // assets
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
 import SettingOutlined from '@ant-design/icons/SettingOutlined';
 import UserOutlined from '@ant-design/icons/UserOutlined';
-import avatar1 from 'assets/images/users/avatar-1.png';
+import avatar1 from '@/assets/images/users/avatar-1.png';
+import { handleLogout } from '@/service/loginService/handleLogout';
 
 // tab panel wrapper
 function TabPanel({ children, value, index, ...other }) {
@@ -146,7 +147,7 @@ export default function Profile() {
                       </Grid>
                       <Grid item>
                         <Tooltip title="Logout">
-                          <IconButton size="large" sx={{ color: 'text.primary' }}>
+                          <IconButton size="large" sx={{ color: 'text.primary' }} onClick={handleLogout}>
                             <LogoutOutlined />
                           </IconButton>
                         </Tooltip>
