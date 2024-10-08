@@ -39,7 +39,9 @@ export default function Breadcrumbs({ navigation, title, ...others }) {
       }
       return false;
     });
-  });
+
+    return () => setItem(null);
+  }, [location]);
 
   // only used for component demo breadcrumbs
   if (location.pathname === '/breadcrumbs') {
@@ -70,7 +72,7 @@ export default function Breadcrumbs({ navigation, title, ...others }) {
     );
 
     // main
-    if (item.breadcrumbs !== false) {
+    if (item?.breadcrumbs) {
       breadcrumbContent = (
         <MainCard border={false} sx={{ mb: 3, bgcolor: 'transparent' }} {...others} content={false}>
           <Grid container direction="column" justifyContent="flex-start" alignItems="flex-start" spacing={1}>

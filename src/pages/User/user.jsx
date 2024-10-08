@@ -22,11 +22,10 @@ import {
   TablePagination
 } from '@mui/material';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getManga } from '@/service/mangaService/getManga';
-import { formatDate } from '@/utils/formatNumber';
+import { getAllUser } from '@/service/userService/getUser';
 
-export default function MangaAdmin() {
-  const [listManga, setListManga] = useState([]);
+export default function User() {
+  const [listUsers, setListUsers] = useState([]);
   const [open, setOpen] = useState(false);
   const [selectedManga, setSelectedManga] = useState(null);
   const [image, setImage] = useState(null);
@@ -57,13 +56,13 @@ export default function MangaAdmin() {
   };
 
   useEffect(() => {
-    const fetchManga = async () => {
-      const data = await getManga();
+    const fetchAllUser = async () => {
+      const data = await getAllUser();
 
-      setListManga(data.data.data);
+      setListUsers(data.data.data);
     };
 
-    fetchManga();
+    fetchAllUser();
   }, []);
 
   // Xử lý thay đổi trang
@@ -81,7 +80,7 @@ export default function MangaAdmin() {
     <div>
       <Container sx={{ mt: 4 }}>
         <Button variant="contained" startIcon={<PlusOutlined />} onClick={() => handleOpen(null)} sx={{ mb: 2 }}>
-          Add New Manga
+          Add New User
         </Button>
 
         <TableContainer component={Paper}>
@@ -91,20 +90,18 @@ export default function MangaAdmin() {
                 <TableCell>
                   <b>No.</b>
                 </TableCell>
+
                 <TableCell>
-                  <b>Image</b>
+                  <b>User Name</b>
                 </TableCell>
                 <TableCell>
-                  <b>Title</b>
+                  <b>Email</b>
                 </TableCell>
-                {/* <TableCell>
-                  <b>Genre</b>
-                </TableCell> */}
-                {/* <TableCell>
-                  <b>Author</b>
-                </TableCell> */}
                 <TableCell>
-                  <b>Updated</b>
+                  <b>Phone</b>
+                </TableCell>
+                <TableCell>
+                  <b>Address</b>
                 </TableCell>
                 <TableCell>
                   <b>Actions</b>
@@ -113,20 +110,17 @@ export default function MangaAdmin() {
             </TableHead>
             <TableBody>
               {/* Dữ liệu Manga */}
-              {listManga.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((manga, index) => (
-                <TableRow key={manga.manga_id}>
+              {listUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((user, index) => (
+                <TableRow key={user.user_id}>
                   <TableCell>{page * rowsPerPage + index + 1}</TableCell>
 
-                  <TableCell>
-                    <Avatar alt={manga.title} src={manga.cover_image} sx={{ width: 80, height: 80, borderRadius: '0' }} />
-                  </TableCell>
-                  <TableCell>{manga.title}</TableCell>
-                  {/* <TableCell>{manga.genres.map((genre) => genre.name).join(', ')}</TableCell> */}
-                  {/* <TableCell>{manga.author}</TableCell> */}
-                  <TableCell>{formatDate(manga.updatedAt)}</TableCell>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.phone}</TableCell>
+                  <TableCell>{user.address}</TableCell>
                   <TableCell>
                     <Tooltip title="Edit">
-                      <IconButton onClick={() => handleOpen(manga)}>
+                      <IconButton onClick={() => handleOpen(user)}>
                         <EditOutlined />
                       </IconButton>
                     </Tooltip>
@@ -146,7 +140,7 @@ export default function MangaAdmin() {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={listManga.length}
+          count={listUsers.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

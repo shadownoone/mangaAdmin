@@ -12,6 +12,7 @@ const DashboardDefault = Loadable(lazy(() => import('@/pages/dashboard/index')))
 const Manga = Loadable(lazy(() => import('@/pages/Manga/manga')));
 const Genre = Loadable(lazy(() => import('@/pages/Genre/genre')));
 const Profile = Loadable(lazy(() => import('@/pages/Profile/profile')));
+const User = Loadable(lazy(() => import('@/pages/User/user')));
 
 // render - sample page
 const SamplePage = Loadable(lazy(() => import('@/pages/extra-pages/sample-page')));
@@ -64,6 +65,10 @@ const MainRoutes = {
     {
       path: 'profile',
       element: <Profile />
+    },
+    {
+      path: 'user',
+      element: <User />
     }
   ]
 };

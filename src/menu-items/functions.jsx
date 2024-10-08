@@ -20,7 +20,8 @@ const functions = {
       type: 'item',
       url: '/manga',
       icon: icons.LoginOutlined,
-      target: false
+      target: false,
+      breadcrumbs: true
     },
     {
       id: 'genre',
@@ -28,7 +29,17 @@ const functions = {
       type: 'item',
       url: '/genre',
       icon: icons.ProfileOutlined,
-      target: false
+      target: false,
+      breadcrumbs: true
+    },
+    {
+      id: 'user',
+      title: 'User',
+      type: 'item',
+      url: '/user',
+      icon: icons.ProfileOutlined,
+      target: false,
+      breadcrumbs: true
     }
   ]
 };

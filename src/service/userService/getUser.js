@@ -5,3 +5,9 @@ export const getCurrentUser = async () => {
     return res.data;
   });
 };
+
+export const getAllUser = async () => {
+  return await axiosClients.get('/users/all').then((res) => {
+    return res.data;
+  });
+};
