@@ -1,191 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Typography,
-  Button,
-  Container,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-  Grid,
-  Tooltip,
-  Avatar,
-  TablePagination
-} from '@mui/material';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getManga } from '@/service/mangaService/getManga';
-import { formatDate } from '@/utils/formatNumber';
+import React, { useState } from 'react';
+import { Button, Container } from '@mui/material';
+import { PlusOutlined } from '@ant-design/icons';
+import MangaList from './MangaList/MangaList';
+import AddMangaForm from './AddMangaForm/AddMangaForm';
 
 export default function MangaAdmin() {
-  const [listManga, setListManga] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedManga, setSelectedManga] = useState(null);
-  const [image, setImage] = useState(null);
-  const [page, setPage] = useState(0); // Trạng thái cho trang hiện tại
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Số lượng sản phẩm trên mỗi trang
+  const [open, setOpen] = useState(false); // Trạng thái mở form
+  // eslint-disable-next-line no-unused-vars
+  const [listManga, setListManga] = useState([]); // Danh sách Manga
 
-  const handleOpen = (manga) => {
-    setSelectedManga(manga);
-    setImage(manga?.image || null);
+  // Xử lý khi form được mở
+  const handleOpen = () => {
     setOpen(true);
   };
 
+  // Xử lý khi form đóng
   const handleClose = () => {
     setOpen(false);
-    setSelectedManga(null);
-    setImage(null);
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImage(event.target.result); // hiển thị hình ảnh tạm thời
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  useEffect(() => {
-    const fetchManga = async () => {
-      const data = await getManga();
-
-      setListManga(data.data.data);
-    };
-
-    fetchManga();
-  }, []);
-
-  // Xử lý thay đổi trang
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  // Xử lý thay đổi số lượng hàng trên mỗi trang
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+  // Xử lý khi thêm Manga mới
+  const handleMangaAdded = (newManga) => {
+    setListManga((prevList) => [...prevList, newManga]);
   };
 
   return (
-    <div>
-      <Container sx={{ mt: 4 }}>
-        <Button variant="contained" startIcon={<PlusOutlined />} onClick={() => handleOpen(null)} sx={{ mb: 2 }}>
-          Add New Manga
-        </Button>
+    <Container sx={{ mt: 4 }}>
+      <Button variant="contained" startIcon={<PlusOutlined />} onClick={handleOpen} sx={{ mb: 2 }}>
+        Add New Manga
+      </Button>
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <b>No.</b>
-                </TableCell>
-                <TableCell>
-                  <b>Image</b>
-                </TableCell>
-                <TableCell>
-                  <b>Title</b>
-                </TableCell>
-                {/* <TableCell>
-                  <b>Genre</b>
-                </TableCell> */}
-                {/* <TableCell>
-                  <b>Author</b>
-                </TableCell> */}
-                <TableCell>
-                  <b>Updated</b>
-                </TableCell>
-                <TableCell>
-                  <b>Actions</b>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {/* Dữ liệu Manga */}
-              {listManga.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((manga, index) => (
-                <TableRow key={manga.manga_id}>
-                  <TableCell>{page * rowsPerPage + index + 1}</TableCell>
+      {/* Hiển thị danh sách Manga */}
+      <MangaList />
 
-                  <TableCell>
-                    <Avatar alt={manga.title} src={manga.cover_image} sx={{ width: 80, height: 80, borderRadius: '0' }} />
-                  </TableCell>
-                  <TableCell>{manga.title}</TableCell>
-                  {/* <TableCell>{manga.genres.map((genre) => genre.name).join(', ')}</TableCell> */}
-                  {/* <TableCell>{manga.author}</TableCell> */}
-                  <TableCell>{formatDate(manga.updatedAt)}</TableCell>
-                  <TableCell>
-                    <Tooltip title="Edit">
-                      <IconButton onClick={() => handleOpen(manga)}>
-                        <EditOutlined />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton color="error">
-                        <DeleteOutlined />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* Thêm phân trang */}
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={listManga.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-
-        {/* Dialog Form thêm/sửa */}
-        <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>{selectedManga ? 'Edit Manga' : 'Add New Manga'}</DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Title" defaultValue={selectedManga?.title || ''} variant="outlined" />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Genre" defaultValue={selectedManga?.genre || ''} variant="outlined" />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Author" defaultValue={selectedManga?.author || ''} variant="outlined" />
-              </Grid>
-
-              {/* Trường chọn hình ảnh */}
-              <Grid item xs={12}>
-                <Typography variant="body1" gutterBottom>
-                  Select Manga Image:
-                </Typography>
-                <input type="file" accept="image/*" onChange={handleImageChange} />
-                {image && <Avatar alt="Selected Manga" src={image} sx={{ width: 100, height: 100, mt: 2 }} />}
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button variant="contained" onClick={handleClose}>
-              {selectedManga ? 'Save Changes' : 'Add Manga'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Container>
-    </div>
+      {/* Form thêm Manga */}
+      <AddMangaForm open={open} handleClose={handleClose} onMangaAdded={handleMangaAdded} />
+    </Container>
   );
 }

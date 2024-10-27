@@ -22,7 +22,7 @@ import {
   TablePagination
 } from '@mui/material';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getAllUser } from '@/service/userService/getUser';
+import { getAllUser } from '@/service/userService';
 
 export default function User() {
   const [listUsers, setListUsers] = useState([]);

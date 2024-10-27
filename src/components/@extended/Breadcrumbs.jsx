@@ -85,11 +85,11 @@ export default function Breadcrumbs({ navigation, title, ...others }) {
                 {itemContent}
               </MuiBreadcrumbs>
             </Grid>
-            {title && (
+            {/* {title && (
               <Grid item sx={{ mt: 2 }}>
                 <Typography variant="h5">{item.title}</Typography>
               </Grid>
-            )}
+            )} */}
           </Grid>
         </MainCard>
       );

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
 
-import { getCurrentUser } from '@/service/userService/getUser';
+import { getCurrentUser } from '@/service/userService';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
