@@ -5,3 +5,9 @@ export const getGenre = async () => {
     return res.data;
   });
 };
+// Hàm API để thêm một thể loại mới
+export const addGenre = async (genreName) => {
+  return await axiosClients.post('/genres/add', { genreName }).then((res) => {
+    return res.data;
+  });
+};

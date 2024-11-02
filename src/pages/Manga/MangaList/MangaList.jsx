@@ -11,83 +11,77 @@ import {
   Avatar,
   IconButton,
   TablePagination,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   TextField,
   Grid
 } from '@mui/material';
 import { DeleteOutlined, FundViewOutlined } from '@ant-design/icons';
-import { getManga, getMangaBySlug, updateManga } from '@/service/mangaService'; // Import API theo slug và update
+import { getManga, getMangaBySlug, updateManga } from '@/service/mangaService';
 import { formatDate } from '@/utils/formatNumber';
+import UpdateMangaDialog from '../UpdateMangaForm/UpdateMangaForm';
 
 export default function MangaList() {
   const [listManga, setListManga] = useState([]);
-  const [filteredManga, setFilteredManga] = useState([]); // Trạng thái lọc Manga
-  const [searchTerm, setSearchTerm] = useState(''); // Trạng thái cho từ khóa tìm kiếm
-  const [selectedManga, setSelectedManga] = useState(null); // Lưu trữ manga được chọn để hiển thị chi tiết
-  const [open, setOpen] = useState(false); // Trạng thái mở dialog
-  const [page, setPage] = useState(0); // Trạng thái cho trang hiện tại
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Số lượng sản phẩm trên mỗi trang
+  const [filteredManga, setFilteredManga] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedManga, setSelectedManga] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  // Lấy danh sách Manga từ API
   useEffect(() => {
     const fetchManga = async () => {
       const data = await getManga();
       setListManga(data.data.data);
-      setFilteredManga(data.data.data); // Đặt danh sách ban đầu vào danh sách đã lọc
+      setFilteredManga(data.data.data);
     };
     fetchManga();
   }, []);
 
-  // Xử lý tìm kiếm Manga
   const handleSearch = (event) => {
     const term = event.target.value.toLowerCase();
     setSearchTerm(term);
-
-    // Lọc danh sách Manga dựa trên từ khóa tìm kiếm
     const filtered = listManga.filter((manga) => manga.title.toLowerCase().includes(term));
     setFilteredManga(filtered);
   };
 
-  // Xử lý thay đổi trang
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  // Xử lý thay đổi số lượng hàng trên mỗi trang
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  // Mở dialog và hiển thị chi tiết Manga bằng slug
   const handleViewDetail = async (slug) => {
-    const data = await getMangaBySlug(slug); // Gọi API lấy thông tin chi tiết Manga theo slug
-    setSelectedManga(data.data); // Lưu trữ dữ liệu Manga được chọn
-    setOpen(true); // Mở dialog
+    const data = await getMangaBySlug(slug);
+    setSelectedManga(data.data);
+    setOpen(true);
   };
 
-  // Đóng dialog
   const handleClose = () => {
     setOpen(false);
-    setSelectedManga(null); // Xóa dữ liệu Manga khi đóng form
+    setSelectedManga(null);
   };
 
-  // Xử lý cập nhật các trường dữ liệu trong form
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setSelectedManga({ ...selectedManga, [name]: value });
-  };
-
-  // Xử lý khi người dùng nhấn "Save"
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = async (updatedManga) => {
     try {
-      await updateManga(selectedManga.manga_id, selectedManga); // Gọi API cập nhật Manga
+      const response = await updateManga(updatedManga.manga_id, updatedManga);
+      const updatedData = response.data?.data || response.data;
+
+      if (!updatedData || !updatedData.manga_id) {
+        console.error('Dữ liệu cập nhật không hợp lệ:', updatedData);
+        return;
+      }
+
       alert('Manga updated successfully!');
-      handleClose(); // Đóng form sau khi lưu
+
+      const updatedListManga = listManga.map((manga) => (manga.manga_id === updatedData.manga_id ? updatedData : manga));
+
+      setListManga(updatedListManga);
+      setFilteredManga(updatedListManga);
+      setSelectedManga(updatedData);
+      handleClose();
     } catch (error) {
       console.error('Error updating manga:', error);
     }
@@ -95,17 +89,9 @@ export default function MangaList() {
 
   return (
     <div>
-      {/* Bố trí ô tìm kiếm và nút thêm manga trên cùng hàng */}
       <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
         <Grid item xs={8}>
-          {/* Ô tìm kiếm */}
-          <TextField
-            variant="outlined"
-            placeholder="Search Manga"
-            value={searchTerm}
-            onChange={handleSearch}
-            sx={{ width: '300px' }} // Điều chỉnh chiều rộng của ô tìm kiếm
-          />
+          <TextField variant="outlined" placeholder="Search Manga" value={searchTerm} onChange={handleSearch} sx={{ width: '300px' }} />
         </Grid>
       </Grid>
 
@@ -165,7 +151,6 @@ export default function MangaList() {
         </Table>
       </TableContainer>
 
-      {/* Phân trang */}
       <TablePagination
         rowsPerPageOptions={[5, 10, 25]}
         component="div"
@@ -176,87 +161,8 @@ export default function MangaList() {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
 
-      {/* Dialog hiển thị chi tiết Manga và cho phép chỉnh sửa */}
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        fullWidth
-        maxWidth="md" // Giới hạn độ rộng lớn nhất của dialog
-        sx={{ '& .MuiDialog-paper': { width: '100%', height: '100%' } }} // Custom kích thước của Dialog
-      >
-        <DialogTitle>Chi tiết Manga</DialogTitle>
-        <DialogContent>
-          {selectedManga && (
-            <TableContainer>
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>
-                      <b>Title:</b>
-                    </TableCell>
-                    <TableCell>
-                      <TextField fullWidth name="title" value={selectedManga.title} onChange={handleInputChange} />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <b>Description:</b>
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        name="description"
-                        value={selectedManga.description}
-                        onChange={handleInputChange}
-                      />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <b>Author:</b>
-                    </TableCell>
-                    <TableCell>
-                      <TextField fullWidth name="author" value={selectedManga.author} onChange={handleInputChange} />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <b>Genres:</b>
-                    </TableCell>
-                    <TableCell>{selectedManga.genres.map((genre) => genre.name).join(', ')}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <b>Views:</b>
-                    </TableCell>
-                    <TableCell>{selectedManga.views}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <b>Followers:</b>
-                    </TableCell>
-                    <TableCell>{selectedManga.followers}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <b>Status:</b>
-                    </TableCell>
-                    <TableCell>{selectedManga.status === 1 ? 'Completed' : 'Ongoing'}</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
-          <Button variant="contained" color="primary" onClick={handleSaveChanges}>
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Sử dụng UpdateMangaDialog */}
+      <UpdateMangaDialog open={open} selectedManga={selectedManga} onClose={handleClose} onSave={handleSaveChanges} />
     </div>
   );
 }
