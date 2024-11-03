@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Typography,
   Button,
   Container,
   Table,
@@ -16,61 +15,83 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
-  Grid,
   Tooltip,
-  Avatar,
   TablePagination
 } from '@mui/material';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getGenre } from '@/service/genreService/genre';
+import { getGenre, addGenre, updateGenre, deleteGenre } from '@/service/genreService/genre';
 
-export default function User() {
+export default function GenreManager() {
   const [listGenres, setListGenres] = useState([]);
   const [open, setOpen] = useState(false);
-  const [selectedManga, setSelectedManga] = useState(null);
-  const [image, setImage] = useState(null);
-  const [page, setPage] = useState(0); // Trạng thái cho trang hiện tại
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Số lượng sản phẩm trên mỗi trang
+  const [selectedGenre, setSelectedGenre] = useState(null);
+  const [genreName, setGenreName] = useState(''); // State for the genre name input
+  const [page, setPage] = useState(0); // Current page state
+  const [rowsPerPage, setRowsPerPage] = useState(5); // Rows per page
 
-  const handleOpen = (manga) => {
-    setSelectedManga(manga);
-    setImage(manga?.image || null);
+  // Open dialog for adding/editing genre
+  const handleOpen = (genre) => {
+    setSelectedGenre(genre);
+    setGenreName(genre?.name || ''); // Set the input with the existing genre name or empty for new genre
     setOpen(true);
   };
 
+  // Close dialog
   const handleClose = () => {
     setOpen(false);
-    setSelectedManga(null);
-    setImage(null);
+    setSelectedGenre(null);
+    setGenreName(''); // Clear the input when dialog is closed
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImage(event.target.result); // hiển thị hình ảnh tạm thời
-      };
-      reader.readAsDataURL(file);
+  // Add or edit genre
+  const handleSaveGenre = async () => {
+    try {
+      if (selectedGenre) {
+        // Update existing genre
+        const response = await updateGenre(selectedGenre.genre_id, genreName);
+        if (response && response.data) {
+          // Update the list with the updated genre
+          setListGenres((prevList) => prevList.map((genre) => (genre.genre_id === selectedGenre.genre_id ? response.data : genre)));
+        }
+      } else {
+        // Add new genre
+        const response = await addGenre(genreName);
+        if (response && response.data) {
+          // Append the new genre to the list
+          setListGenres((prevList) => [...prevList, response.data]);
+        }
+      }
+      handleClose(); // Close the dialog after saving
+    } catch (error) {
+      console.error('Error saving genre:', error);
     }
   };
 
+  // Delete genre
+  const handleDeleteGenre = async (genreId) => {
+    try {
+      await deleteGenre(genreId); // Call the delete API
+      setListGenres((prevList) => prevList.filter((genre) => genre.genre_id !== genreId)); // Update state
+    } catch (error) {
+      console.error('Error deleting genre:', error);
+    }
+  };
+
+  // Fetch genres on component mount
   useEffect(() => {
     const fetchGenre = async () => {
       const data = await getGenre();
-
       setListGenres(data.data.data);
     };
-
     fetchGenre();
   }, []);
 
-  // Xử lý thay đổi trang
+  // Handle page change
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  // Xử lý thay đổi số lượng hàng trên mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -90,24 +111,19 @@ export default function User() {
                 <TableCell>
                   <b>No.</b>
                 </TableCell>
-
                 <TableCell>
                   <b>Genre Name</b>
                 </TableCell>
-
                 <TableCell>
                   <b>Actions</b>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* Dữ liệu Manga */}
               {listGenres.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((genre, index) => (
                 <TableRow key={genre.genre_id}>
                   <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-
                   <TableCell>{genre.name}</TableCell>
-
                   <TableCell>
                     <Tooltip title="Edit">
                       <IconButton onClick={() => handleOpen(genre)}>
@@ -115,7 +131,7 @@ export default function User() {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                      <IconButton color="error">
+                      <IconButton color="error" onClick={() => handleDeleteGenre(genre.genre_id)}>
                         <DeleteOutlined />
                       </IconButton>
                     </Tooltip>
@@ -126,7 +142,7 @@ export default function User() {
           </Table>
         </TableContainer>
 
-        {/* Thêm phân trang */}
+        {/* Pagination */}
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
@@ -137,35 +153,16 @@ export default function User() {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
 
-        {/* Dialog Form thêm/sửa */}
-        <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>{selectedManga ? 'Edit Manga' : 'Add New Manga'}</DialogTitle>
+        {/* Dialog for adding/editing genre */}
+        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
+          <DialogTitle>{selectedGenre ? 'Edit Genre' : 'Add New Genre'}</DialogTitle>
           <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Title" defaultValue={selectedManga?.title || ''} variant="outlined" />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Genre" defaultValue={selectedManga?.genre || ''} variant="outlined" />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Author" defaultValue={selectedManga?.author || ''} variant="outlined" />
-              </Grid>
-
-              {/* Trường chọn hình ảnh */}
-              <Grid item xs={12}>
-                <Typography variant="body1" gutterBottom>
-                  Select Manga Image:
-                </Typography>
-                <input type="file" accept="image/*" onChange={handleImageChange} />
-                {image && <Avatar alt="Selected Manga" src={image} sx={{ width: 100, height: 100, mt: 2 }} />}
-              </Grid>
-            </Grid>
+            <TextField fullWidth label="Genre Name" value={genreName} onChange={(e) => setGenreName(e.target.value)} variant="outlined" />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button variant="contained" onClick={handleClose}>
-              {selectedManga ? 'Save Changes' : 'Add Manga'}
+            <Button variant="contained" onClick={handleSaveGenre}>
+              {selectedGenre ? 'Save Changes' : 'Add Genre'}
             </Button>
           </DialogActions>
         </Dialog>

@@ -11,7 +11,13 @@ import {
   Table,
   TableBody,
   TableRow,
-  TableCell
+  TableCell,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import { getGenre, addGenre } from '@/service/genreService/genre';
 
@@ -19,11 +25,11 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
   const [mangaData, setMangaData] = useState(selectedManga || {});
   const [availableGenres, setAvailableGenres] = useState([]);
 
+  // Load initial manga data and genres
   useEffect(() => {
     if (selectedManga) {
       const genres = selectedManga.genres?.map((item) => (typeof item === 'string' ? item : item.name)) || [];
       setMangaData({ ...selectedManga, genres });
-      console.log('Selected Manga Data:', mangaData); // Kiểm tra mangaData
     }
   }, [selectedManga]);
 
@@ -31,11 +37,8 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
     const fetchGenres = async () => {
       try {
         const response = await getGenre();
-        console.log('Genres response from API:', response); // Kiểm tra cấu trúc dữ liệu từ API
-
         const genreNames = response.data.data.map((genre) => genre.name);
         setAvailableGenres(genreNames);
-        console.log('Available Genres:', genreNames); // Kiểm tra availableGenres sau khi xử lý
       } catch (error) {
         console.error('Error fetching genres:', error);
       }
@@ -44,38 +47,34 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
     fetchGenres();
   }, []);
 
+  // Handle input changes for text fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setMangaData({ ...mangaData, [name]: value });
   };
 
+  // Handle genre selection and updating
   const handleGenresChange = (event, value) => {
     const genres = value.map((item) => (typeof item === 'string' ? item : item.name));
     setMangaData({ ...mangaData, genres });
-    console.log('Updated mangaData.genres:', genres);
   };
 
+  // Handle saving changes
   const handleSaveChanges = async () => {
     try {
-      console.log('Available Genres:', availableGenres); // Kiểm tra danh sách thể loại hiện tại trong availableGenres
-      console.log('Current mangaData.genres:', mangaData.genres); // Kiểm tra danh sách thể loại hiện tại trong mangaData.genres
-
-      // Chuyển tất cả các giá trị trong availableGenres thành chữ thường để so sánh chính xác
+      // Normalize genres to check for new genres
       const normalizedAvailableGenres = availableGenres.map((genre) => genre.toLowerCase());
       const newGenres = mangaData.genres.filter((genre) => !normalizedAvailableGenres.includes(genre.toLowerCase()));
 
-      console.log('New genres to add:', newGenres); // Log để kiểm tra danh sách thể loại mới
-
-      // Gọi API để thêm các thể loại mới vào backend
+      // Add new genres to the database if they don't already exist
       for (const genreName of newGenres) {
-        const result = await addGenre(genreName);
-        console.log(`Added genre ${genreName}:`, result); // Kiểm tra từng kết quả thêm thể loại
+        await addGenre(genreName);
       }
 
-      // Cập nhật danh sách `availableGenres` với các thể loại vừa thêm
+      // Update available genres to include new genres
       setAvailableGenres([...availableGenres, ...newGenres]);
 
-      // Gọi hàm `onSave` với `mangaData` sau khi cập nhật
+      // Call onSave with the updated manga data
       onSave(mangaData);
       onClose();
     } catch (error) {
@@ -83,14 +82,25 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
     }
   };
 
+  // Handle changes to status field (dropdown)
+  const handleStatusChange = (event) => {
+    setMangaData({ ...mangaData, status: event.target.value });
+  };
+
+  // Handle changes to is_vip field (checkbox)
+  const handleVipChange = (event) => {
+    setMangaData({ ...mangaData, is_vip: event.target.checked });
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" sx={{ '& .MuiDialog-paper': { width: '100%', height: '100%' } }}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Chi tiết Manga</DialogTitle>
       <DialogContent>
         {mangaData && (
           <TableContainer>
             <Table>
               <TableBody>
+                {/* Title Field */}
                 <TableRow>
                   <TableCell>
                     <b>Title:</b>
@@ -99,6 +109,8 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
                     <TextField fullWidth name="title" value={mangaData.title || ''} onChange={handleInputChange} />
                   </TableCell>
                 </TableRow>
+
+                {/* Description Field */}
                 <TableRow>
                   <TableCell>
                     <b>Description:</b>
@@ -114,6 +126,8 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
                     />
                   </TableCell>
                 </TableRow>
+
+                {/* Genres Field */}
                 <TableRow>
                   <TableCell>
                     <b>Genres:</b>
@@ -129,6 +143,8 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
                     />
                   </TableCell>
                 </TableRow>
+
+                {/* Author Field */}
                 <TableRow>
                   <TableCell>
                     <b>Author:</b>
@@ -137,23 +153,50 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
                     <TextField fullWidth name="author" value={mangaData.author || ''} onChange={handleInputChange} />
                   </TableCell>
                 </TableRow>
+
+                {/* Views Field */}
                 <TableRow>
                   <TableCell>
                     <b>Views:</b>
                   </TableCell>
                   <TableCell>{mangaData.views}</TableCell>
                 </TableRow>
+
+                {/* Followers Field */}
                 <TableRow>
                   <TableCell>
                     <b>Followers:</b>
                   </TableCell>
                   <TableCell>{mangaData.followers}</TableCell>
                 </TableRow>
+
+                {/* Status Field */}
                 <TableRow>
                   <TableCell>
                     <b>Status:</b>
                   </TableCell>
-                  <TableCell>{mangaData.status === 1 ? 'Completed' : 'Ongoing'}</TableCell>
+                  <TableCell>
+                    <FormControl fullWidth>
+                      <InputLabel>Status</InputLabel>
+                      <Select name="status" value={mangaData.status || 0} onChange={handleStatusChange}>
+                        <MenuItem value={1}>Completed</MenuItem>
+                        <MenuItem value={0}>On Going</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                </TableRow>
+
+                {/* VIP Status Field */}
+                <TableRow>
+                  <TableCell>
+                    <b>IsVip:</b>
+                  </TableCell>
+                  <TableCell>
+                    <FormControlLabel
+                      control={<Checkbox checked={!!mangaData.is_vip} onChange={handleVipChange} color="primary" />}
+                      label="Vip"
+                    />
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>

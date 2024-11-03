@@ -11,3 +11,13 @@ export const addGenre = async (genreName) => {
     return res.data;
   });
 };
+
+export const updateGenre = async (id, genreName) => {
+  return await axiosClients.put(`/genres/${id}`, { genreName }).then((res) => {
+    return res.data;
+  });
+};
+
+export const deleteGenre = async (id) => {
+  return await axiosClients.delete(`/genres/${id}`).then((res) => res.data);
+};

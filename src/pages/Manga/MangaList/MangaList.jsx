@@ -56,6 +56,8 @@ export default function MangaList() {
   const handleViewDetail = async (slug) => {
     const data = await getMangaBySlug(slug);
     setSelectedManga(data.data);
+    console.log(data.data);
+
     setOpen(true);
   };
 
