@@ -1,6 +1,12 @@
 import { format } from 'date-fns';
 
-// Hàm định dạng ngày
+// Function to format date
 export const formatDate = (dateString) => {
-  return format(new Date(dateString), 'dd/MM/yyyy'); // Định dạng ngày thành dd/MM/yyyy
+  if (!dateString) return 'N/A'; // Return 'N/A' if dateString is null or undefined
+  try {
+    return format(new Date(dateString), 'dd/MM/yyyy'); // Format date to dd/MM/yyyy
+  } catch (error) {
+    console.error('Invalid date:', dateString);
+    return 'Invalid Date';
+  }
 };

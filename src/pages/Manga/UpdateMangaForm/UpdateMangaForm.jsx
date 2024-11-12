@@ -17,13 +17,19 @@ import {
   Select,
   MenuItem,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  Avatar
 } from '@mui/material';
 import { getGenre, addGenre } from '@/service/genreService/genre';
+import assets from '@/assets/images/users/assets.gif'; // Loading image
+import { uploadSingleImage } from '@/service/mangaService';
+import { toast } from 'react-toastify';
 
 export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave }) {
   const [mangaData, setMangaData] = useState(selectedManga || {});
   const [availableGenres, setAvailableGenres] = useState([]);
+  const [loading, setLoading] = useState(false); // Loading state for image upload
+  const [isImageUploaded, setIsImageUploaded] = useState(false); // Image upload success state
 
   // Load initial manga data and genres
   useEffect(() => {
@@ -33,6 +39,7 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
     }
   }, [selectedManga]);
 
+  // Load available genres from API
   useEffect(() => {
     const fetchGenres = async () => {
       try {
@@ -47,6 +54,35 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
     fetchGenres();
   }, []);
 
+  // Convert file to base64 for image upload
+  const convertBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = () => resolve(fileReader.result);
+      fileReader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Handle image upload
+  const uploadImage = async (event) => {
+    const files = event.target.files;
+    const base64 = await convertBase64(files[0]);
+
+    try {
+      setLoading(true);
+      const uploadedUrl = await uploadSingleImage(base64);
+      setMangaData({ ...mangaData, cover_image: uploadedUrl }); // Update cover_image in mangaData
+      setIsImageUploaded(true);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Error uploading image');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle input changes for text fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,22 +95,31 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
     setMangaData({ ...mangaData, genres });
   };
 
+  // Handle status dropdown change
+  const handleStatusChange = (event) => {
+    setMangaData({ ...mangaData, status: event.target.value });
+  };
+
+  // Handle VIP checkbox change
+  const handleVipChange = (event) => {
+    setMangaData({ ...mangaData, is_vip: event.target.checked });
+  };
+
   // Handle saving changes
   const handleSaveChanges = async () => {
     try {
-      // Normalize genres to check for new genres
+      // Check for new genres and add them to the database
       const normalizedAvailableGenres = availableGenres.map((genre) => genre.toLowerCase());
       const newGenres = mangaData.genres.filter((genre) => !normalizedAvailableGenres.includes(genre.toLowerCase()));
 
-      // Add new genres to the database if they don't already exist
       for (const genreName of newGenres) {
         await addGenre(genreName);
       }
 
-      // Update available genres to include new genres
+      // Update available genres list to include new genres
       setAvailableGenres([...availableGenres, ...newGenres]);
 
-      // Call onSave with the updated manga data
+      // Call onSave with updated manga data
       onSave(mangaData);
       onClose();
     } catch (error) {
@@ -82,19 +127,9 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
     }
   };
 
-  // Handle changes to status field (dropdown)
-  const handleStatusChange = (event) => {
-    setMangaData({ ...mangaData, status: event.target.value });
-  };
-
-  // Handle changes to is_vip field (checkbox)
-  const handleVipChange = (event) => {
-    setMangaData({ ...mangaData, is_vip: event.target.checked });
-  };
-
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Chi tiết Manga</DialogTitle>
+      <DialogTitle>Update Manga Details</DialogTitle>
       <DialogContent>
         {mangaData && (
           <TableContainer>
@@ -107,6 +142,20 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
                   </TableCell>
                   <TableCell>
                     <TextField fullWidth name="title" value={mangaData.title || ''} onChange={handleInputChange} />
+                  </TableCell>
+                </TableRow>
+
+                {/* Image Upload Field */}
+                <TableRow>
+                  <TableCell>
+                    <b>Image:</b>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="contained" component="label">
+                      {loading ? <img src={assets} alt="loading" style={{ width: 24, height: 24 }} /> : 'Upload Cover Image'}
+                      <input type="file" hidden onChange={uploadImage} />
+                    </Button>
+                    {isImageUploaded && <Avatar alt="cover_image" src={mangaData.cover_image} sx={{ width: 100, height: 100, mt: 2 }} />}
                   </TableCell>
                 </TableRow>
 
@@ -189,12 +238,12 @@ export default function UpdateMangaDialog({ open, selectedManga, onClose, onSave
                 {/* VIP Status Field */}
                 <TableRow>
                   <TableCell>
-                    <b>IsVip:</b>
+                    <b>Is VIP:</b>
                   </TableCell>
                   <TableCell>
                     <FormControlLabel
                       control={<Checkbox checked={!!mangaData.is_vip} onChange={handleVipChange} color="primary" />}
-                      label="Vip"
+                      label="VIP"
                     />
                   </TableCell>
                 </TableRow>

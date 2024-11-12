@@ -14,7 +14,7 @@ import {
   TextField,
   Grid
 } from '@mui/material';
-import { DeleteOutlined, FundViewOutlined } from '@ant-design/icons';
+import { BookOutlined, DeleteOutlined, FundViewOutlined } from '@ant-design/icons';
 import { getManga, getMangaBySlug, updateManga } from '@/service/mangaService';
 import { formatDate } from '@/utils/formatNumber';
 import UpdateMangaDialog from '../UpdateMangaForm/UpdateMangaForm';
@@ -56,8 +56,8 @@ export default function MangaList() {
   const handleViewDetail = async (slug) => {
     const data = await getMangaBySlug(slug);
     setSelectedManga(data.data);
-    console.log(data.data);
 
+    console.log('🚀 ~ handleViewDetail ~ data.data:', data.data);
     setOpen(true);
   };
 
@@ -132,6 +132,11 @@ export default function MangaList() {
                     <Tooltip title="View">
                       <IconButton onClick={() => handleViewDetail(manga.slug)}>
                         <FundViewOutlined />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Chapters">
+                      <IconButton onClick={() => handleViewChapters(manga.manga_id)}>
+                        <BookOutlined />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">

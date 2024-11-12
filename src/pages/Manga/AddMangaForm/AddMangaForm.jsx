@@ -1,21 +1,56 @@
-import React, { useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Grid, Avatar } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Grid,
+  Avatar,
+  Autocomplete,
+  FormControlLabel,
+  Checkbox
+} from '@mui/material';
 import { createManga, uploadSingleImage } from '@/service/mangaService';
+import { getGenre, addGenre } from '@/service/genreService/genre';
 import { toast } from 'react-toastify';
-import assets from '@/assets/images/users/assets.gif'; // Ảnh loading
+import assets from '@/assets/images/users/assets.gif'; // Loading image
 
 export default function AddMangaForm({ open, handleClose, onMangaAdded }) {
-  const [loading, setLoading] = useState(false); // Trạng thái loading
-  const [url, setUrl] = useState(''); // URL ảnh sau khi upload
-  const [isImageUploaded, setIsImageUploaded] = useState(false); // Trạng thái ảnh đã upload thành công
+  const [availableGenres, setAvailableGenres] = useState([]);
+  const [loading, setLoading] = useState(false); // Loading state for image upload
+  const [url, setUrl] = useState(''); // URL for uploaded image
+  const [isImageUploaded, setIsImageUploaded] = useState(false); // Image upload success state
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     cover_image: '',
-    author: ''
+    author: '',
+    genres: [],
+    isVip: ''
   });
 
-  // Chuyển file thành base64
+  // Load available genres from the API
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const response = await getGenre();
+        const genreNames = response.data.data.map((genre) => genre.name);
+        setAvailableGenres(genreNames);
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+      }
+    };
+    fetchGenres();
+  }, []);
+
+  // Handle VIP checkbox change
+  const handleVipChange = (event) => {
+    setFormData({ ...formData, is_vip: event.target.checked });
+  };
+
+  // Convert file to base64
   const convertBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const fileReader = new FileReader();
@@ -25,51 +60,75 @@ export default function AddMangaForm({ open, handleClose, onMangaAdded }) {
     });
   };
 
-  // Upload ảnh
+  // Handle image upload
   const uploadImage = async (event) => {
     const files = event.target.files;
     const base64 = await convertBase64(files[0]);
 
     try {
-      setLoading(true); // Bắt đầu trạng thái loading
+      setLoading(true);
       const uploadedUrl = await uploadSingleImage(base64);
-      setUrl(uploadedUrl); // Set URL của ảnh sau khi upload
-      setIsImageUploaded(true); // Đánh dấu là ảnh đã được upload
-      setFormData({ ...formData, cover_image: uploadedUrl }); // Cập nhật URL ảnh vào formData
-      toast.success('Upload ảnh thành công');
+      setUrl(uploadedUrl);
+      setIsImageUploaded(true);
+      setFormData({ ...formData, cover_image: uploadedUrl });
+      toast.success('Image uploaded successfully');
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Error uploading image');
     } finally {
-      setLoading(false); // Kết thúc trạng thái loading
+      setLoading(false);
     }
   };
 
-  // Xử lý thay đổi dữ liệu nhập vào form
+  // Handle input changes for other fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // Gọi API để thêm Manga mới
+  // Handle genre selection or creation of new genres
+  const handleGenresChange = async (event, value) => {
+    const genres = value.map((item) => item.toLowerCase()); // Normalize genres to lowercase
+    const newGenres = genres.filter((genre) => !availableGenres.includes(genre));
+
+    // Add new genres to the database if they don't already exist
+    for (const genre of newGenres) {
+      try {
+        await addGenre(genre);
+        setAvailableGenres((prev) => [...prev, genre]);
+      } catch (error) {
+        console.error(`Error adding new genre ${genre}:`, error);
+      }
+    }
+
+    // Update selected genres in the form data
+    setFormData({ ...formData, genres });
+  };
+
+  // Submit the form data to create a new Manga
   const handleSubmit = async () => {
     try {
-      const result = await createManga(formData); // Gọi API tạo Manga
-      toast.success('Manga created successfully!'); // Hiển thị thông báo thành công
-      onMangaAdded(result.data); // Gọi callback để cập nhật danh sách manga
-      handleClose(); // Đóng form sau khi thêm mới thành công
-    } catch (error) {
-      if (error.response && error.response.data.message === 'Manga with this title already exists') {
-        toast.error('Manga với tiêu đề này đã tồn tại. Vui lòng chọn tiêu đề khác.');
-      } else {
-        toast.error('Error creating manga!');
-        console.error('Error creating manga:', error); // Hiển thị lỗi nếu có
+      // Thêm thể loại mới nếu cần
+      const normalizedAvailableGenres = availableGenres.map((genre) => genre.toLowerCase());
+      const newGenres = formData.genres.filter((genre) => !normalizedAvailableGenres.includes(genre.toLowerCase()));
+      for (const genreName of newGenres) {
+        await addGenre(genreName);
       }
+
+      // Gọi API tạo manga với thể loại đầy đủ
+      const result = await createManga(formData);
+      toast.success('Manga created successfully!');
+      onMangaAdded(result.data);
+
+      handleClose();
+    } catch (error) {
+      console.error('Error creating manga:', error);
+      toast.error('Error creating manga!');
     }
   };
 
   return (
-    <Dialog open={open} onClose={handleClose}>
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
       <DialogTitle>Add New Manga</DialogTitle>
       <DialogContent>
         <Grid container spacing={2}>
@@ -96,6 +155,21 @@ export default function AddMangaForm({ open, handleClose, onMangaAdded }) {
           </Grid>
           <Grid item xs={12}>
             <TextField label="Author" fullWidth name="author" value={formData.author} onChange={handleInputChange} />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Autocomplete
+              multiple
+              options={availableGenres}
+              freeSolo
+              value={formData.genres}
+              onChange={handleGenresChange}
+              renderInput={(params) => <TextField {...params} label="Genres" placeholder="Choose or add genres" />}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControlLabel control={<Checkbox checked={!!formData.is_vip} onChange={handleVipChange} color="primary" />} label="VIP" />
           </Grid>
         </Grid>
       </DialogContent>

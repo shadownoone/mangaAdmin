@@ -40,6 +40,15 @@ const functions = {
       icon: icons.ProfileOutlined,
       target: false,
       breadcrumbs: true
+    },
+    {
+      id: 'chapter',
+      title: 'Chapter',
+      type: 'item',
+      url: '/chapter',
+      icon: icons.ProfileOutlined,
+      target: false,
+      breadcrumbs: true
     }
   ]
 };
