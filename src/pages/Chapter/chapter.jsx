@@ -20,22 +20,28 @@ import {
   Button
 } from '@mui/material';
 import { BookOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { getManga, getMangaBySlug } from '@/service/mangaService';
+import { getManga, getMangaBySlug, uploadMultipleImages } from '@/service/mangaService';
 import { formatDate } from '@/utils/formatNumber';
 import { createChapter } from '@/service/chapterService/chapter';
+import { toast } from 'react-toastify';
+import assets from '@/assets/images/users/assets.gif';
 
 export default function Chapter() {
   const [listManga, setListManga] = useState([]);
   const [filteredManga, setFilteredManga] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [url, setUrl] = useState('');
   const [selectedManga, setSelectedManga] = useState(null);
   const [open, setOpen] = useState(false); // Dialog state for chapter list
   const [openChapterDialog, setOpenChapterDialog] = useState(false); // Dialog state for add/edit chapter
   const [currentChapter, setCurrentChapter] = useState(null); // For editing a chapter
   const [newChapterTitle, setNewChapterTitle] = useState('');
   const [newChapterNumber, setNewChapterNumber] = useState('');
+  const [isImageUploaded, setIsImageUploaded] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [loading, setLoading] = useState(false);
+  const [newChapterImage, setNewChapterImage] = useState('');
 
   // State for chapter pagination and search
   const [chapterPage, setChapterPage] = useState(0);
@@ -51,6 +57,54 @@ export default function Chapter() {
     };
     fetchManga();
   }, []);
+
+  // Convert file to base64
+  const convertBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = () => resolve(fileReader.result);
+      fileReader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Handle image upload
+  const uploadImage = async (event) => {
+    if (event.target.files.length === 0) {
+      toast.error('No file selected');
+      return;
+    }
+
+    const files = event.target.files;
+    const base64Images = [];
+
+    try {
+      setLoading(true);
+      console.log('Uploading images...');
+
+      // Chuyển đổi tất cả các file thành base64
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const base64 = await convertBase64(file);
+        base64Images.push(base64);
+      }
+
+      // Upload tất cả các ảnh
+      const uploadedUrls = await uploadMultipleImages(base64Images);
+      console.log('Uploaded Images URLs:', uploadedUrls);
+
+      // Xử lý URL của các ảnh đã upload
+      setUrl(uploadedUrls);
+      setIsImageUploaded(true);
+      setNewChapterImage((prevImages) => [...prevImages, ...uploadedUrls]);
+      toast.success('Images uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast.error('Error uploading images');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = (event) => {
     const term = event.target.value.toLowerCase();
@@ -103,37 +157,46 @@ export default function Chapter() {
 
   const handleSaveChapter = async () => {
     try {
+      if (!newChapterTitle || !newChapterNumber || newChapterImage.length === 0) {
+        toast.error('Please provide all required fields (title, number, and images)');
+        return;
+      }
+
+      // Nếu là chapter mới
       if (currentChapter) {
+        // Chỉnh sửa chapter hiện tại
         const updatedChapter = await updateChapter(currentChapter.chapter_id, {
           title: newChapterTitle,
-          chapter_number: newChapterNumber
+          chapter_number: newChapterNumber,
+          image_urls: newChapterImage // Gửi mảng các URL ảnh
         });
 
+        // Cập nhật danh sách chapter
         const updatedChapters = selectedManga.chapters.map((ch) => (ch.chapter_id === updatedChapter.chapter_id ? updatedChapter : ch));
+
         setSelectedManga((prevManga) => ({
           ...prevManga,
           chapters: updatedChapters
         }));
-        setFilteredChapters(updatedChapters); // Update filtered chapters
+        setFilteredChapters(updatedChapters);
       } else {
-        const newChapterResponse = await createChapter(selectedManga.manga_id, newChapterNumber, newChapterTitle, []);
-
-        if (!newChapterResponse || !newChapterResponse.data) {
-          console.error('Failed to create chapter, no valid data returned.');
-          return;
-        }
+        // Thêm chapter mới
+        const newChapterResponse = await createChapter(selectedManga.manga_id, newChapterNumber, newChapterTitle, newChapterImage); // Gửi mảng ảnh
 
         const newChapterData = newChapterResponse.data;
+
         setSelectedManga((prevManga) => ({
           ...prevManga,
           chapters: [...prevManga.chapters, newChapterData].sort((a, b) => a.chapter_number - b.chapter_number)
         }));
-        setFilteredChapters([...selectedManga.chapters, newChapterData]); // Update filtered chapters
+        setFilteredChapters((prevChapters) => [...prevChapters, newChapterData]);
       }
 
-      setOpenChapterDialog(false); // Close the add/edit chapter dialog
+      setOpenChapterDialog(false);
+      alert('Chapter saved successfully!');
     } catch (error) {
       console.error('Error saving chapter:', error);
+      toast.error('Error saving chapter');
     }
   };
 
@@ -266,6 +329,7 @@ export default function Chapter() {
                   .slice(chapterPage * chaptersPerPage, chapterPage * chaptersPerPage + chaptersPerPage)
                   .map((chapter, index) => (
                     <TableRow key={chapter.chapter_id}>
+                      {/* Sử dụng chapter.chapter_id làm key */}
                       <TableCell>{chapterPage * chaptersPerPage + index + 1}</TableCell>
                       <TableCell>{chapter.title}</TableCell>
                       <TableCell>{formatDate(chapter.createdAt)}</TableCell>
@@ -321,6 +385,26 @@ export default function Chapter() {
             onChange={(e) => setNewChapterNumber(e.target.value)}
             sx={{ mb: 2 }}
           />
+          <Button variant="contained" component="label">
+            {loading ? 'Uploading...' : 'Upload Chapter Images'}
+            <input type="file" multiple onChange={uploadImage} />
+          </Button>
+
+          {newChapterImage && newChapterImage.length > 0 && (
+            <>
+              <p>Uploaded Image Previews:</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                {newChapterImage.map((imageUrl, index) => (
+                  <Avatar
+                    key={index}
+                    alt={`Chapter Image ${index + 1}`}
+                    src={imageUrl}
+                    sx={{ width: 100, height: 100, mt: 2, marginRight: 2 }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseChapterDialog}>Cancel</Button>
