@@ -1,27 +1,43 @@
-// ChapterDialog.js
 import React from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
   Table,
-  TableBody,
-  TableCell,
   TableHead,
   TableRow,
+  TableCell,
+  TableBody,
+  TablePagination,
   Tooltip,
-  IconButton
+  IconButton,
+  Button,
+  TextField
 } from '@mui/material';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { formatDate } from '@/utils/formatNumber';
 
-const ChapterDialog = ({ open, onClose, manga, onEditChapter, onDeleteChapter, onAddChapter }) => {
+export default function ChapterDialog({
+  open,
+  selectedManga,
+  filteredChapters,
+  chapterPage,
+  chaptersPerPage,
+  handleChapterSearch,
+  handleChapterPageChange,
+  handleChaptersPerPageChange,
+  handleEditChapter,
+  handleDeleteChapter,
+  handleAddChapter,
+  handleClose,
+  chapterSearchTerm
+}) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Chapter List for {manga?.title}</DialogTitle>
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <DialogTitle>Chapter List for {selectedManga?.title}</DialogTitle>
       <DialogContent>
-        <Button startIcon={<EditOutlined />} onClick={onAddChapter} sx={{ mb: 2 }}>
+        <TextField placeholder="Search Chapter" value={chapterSearchTerm} onChange={handleChapterSearch} fullWidth sx={{ mb: 2 }} />
+        <Button startIcon={<PlusOutlined />} onClick={handleAddChapter} sx={{ mb: 2 }}>
           Add Chapter
         </Button>
         <Table>
@@ -34,33 +50,38 @@ const ChapterDialog = ({ open, onClose, manga, onEditChapter, onDeleteChapter, o
             </TableRow>
           </TableHead>
           <TableBody>
-            {manga?.chapters.map((chapter, index) => (
-              <TableRow key={chapter.chapter_id}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{chapter.title}</TableCell>
-                <TableCell>{chapter.createdAt}</TableCell>
-                <TableCell>
-                  <Tooltip title="Edit">
-                    <IconButton onClick={() => onEditChapter(chapter)}>
-                      <EditOutlined />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete">
-                    <IconButton color="error" onClick={() => onDeleteChapter(chapter.chapter_id)}>
-                      <DeleteOutlined />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredChapters
+              .slice(chapterPage * chaptersPerPage, chapterPage * chaptersPerPage + chaptersPerPage)
+              .map((chapter, index) => (
+                <TableRow key={chapter.chapter_id}>
+                  <TableCell>{chapterPage * chaptersPerPage + index + 1}</TableCell>
+                  <TableCell>{chapter.title}</TableCell>
+                  <TableCell>{formatDate(chapter.createdAt)}</TableCell>
+                  <TableCell>
+                    <Tooltip title="Edit">
+                      <IconButton onClick={() => handleEditChapter(chapter)}>
+                        <EditOutlined />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton color="error" onClick={() => handleDeleteChapter(chapter.chapter_id)}>
+                        <DeleteOutlined />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          count={filteredChapters.length}
+          rowsPerPage={chaptersPerPage}
+          page={chapterPage}
+          onPageChange={handleChapterPageChange}
+          onRowsPerPageChange={handleChaptersPerPageChange}
+        />
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
     </Dialog>
   );
-};
-
-export default ChapterDialog;
+}

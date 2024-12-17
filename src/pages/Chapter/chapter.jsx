@@ -1,43 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Tooltip,
-  Avatar,
-  IconButton,
-  TablePagination,
-  TextField,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button
-} from '@mui/material';
-import { BookOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { getManga, getMangaBySlug, uploadMultipleImages } from '@/service/mangaService';
-import { formatDate } from '@/utils/formatNumber';
+import { TextField, Grid } from '@mui/material';
+
+import { getManga, getMangaBySlug } from '@/service/mangaService';
+
 import { createChapter } from '@/service/chapterService/chapter';
 import { toast } from 'react-toastify';
-import assets from '@/assets/images/users/assets.gif';
+
+import MangaTable from './MangaTable/MangaTable';
+import { Container } from '@mui/system';
+import ChapterDialog from './ChapterDialog/ChapterDialog';
+import ChapterFormDialog from './ChapterFormDialog/ChapterFormDialog';
 
 export default function Chapter() {
   const [listManga, setListManga] = useState([]);
   const [filteredManga, setFilteredManga] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [url, setUrl] = useState('');
+
   const [selectedManga, setSelectedManga] = useState(null);
   const [open, setOpen] = useState(false); // Dialog state for chapter list
   const [openChapterDialog, setOpenChapterDialog] = useState(false); // Dialog state for add/edit chapter
   const [currentChapter, setCurrentChapter] = useState(null); // For editing a chapter
   const [newChapterTitle, setNewChapterTitle] = useState('');
   const [newChapterNumber, setNewChapterNumber] = useState('');
-  const [isImageUploaded, setIsImageUploaded] = useState(false);
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [loading, setLoading] = useState(false);
@@ -57,54 +42,6 @@ export default function Chapter() {
     };
     fetchManga();
   }, []);
-
-  // Convert file to base64
-  const convertBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
-      fileReader.onload = () => resolve(fileReader.result);
-      fileReader.onerror = (error) => reject(error);
-    });
-  };
-
-  // Handle image upload
-  const uploadImage = async (event) => {
-    if (event.target.files.length === 0) {
-      toast.error('No file selected');
-      return;
-    }
-
-    const files = event.target.files;
-    const base64Images = [];
-
-    try {
-      setLoading(true);
-      console.log('Uploading images...');
-
-      // Chuyển đổi tất cả các file thành base64
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const base64 = await convertBase64(file);
-        base64Images.push(base64);
-      }
-
-      // Upload tất cả các ảnh
-      const uploadedUrls = await uploadMultipleImages(base64Images);
-      console.log('Uploaded Images URLs:', uploadedUrls);
-
-      // Xử lý URL của các ảnh đã upload
-      setUrl(uploadedUrls);
-      setIsImageUploaded(true);
-      setNewChapterImage((prevImages) => [...prevImages, ...uploadedUrls]);
-      toast.success('Images uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading images:', error);
-      toast.error('Error uploading images');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSearch = (event) => {
     const term = event.target.value.toLowerCase();
@@ -224,195 +161,53 @@ export default function Chapter() {
   };
 
   return (
-    <div>
+    <Container sx={{ mt: 4 }}>
       <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
         <Grid item xs={8}>
           <TextField variant="outlined" placeholder="Search Manga" value={searchTerm} onChange={handleSearch} sx={{ width: '300px' }} />
         </Grid>
       </Grid>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell style={{ width: '10%' }}>
-                <b>No.</b>
-              </TableCell>
-              <TableCell style={{ width: '15%' }}>
-                <b>Image</b>
-              </TableCell>
-              <TableCell style={{ width: '35%' }}>
-                <b>Title</b>
-              </TableCell>
-              <TableCell style={{ width: '20%' }}>
-                <b>Updated</b>
-              </TableCell>
-              <TableCell style={{ width: '20%' }}>
-                <b>Actions</b>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredManga.length > 0 ? (
-              filteredManga.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((manga, index) => (
-                <TableRow key={manga.manga_id}>
-                  <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                  <TableCell>
-                    <Avatar alt={manga.title} src={manga.cover_image} sx={{ width: 80, height: 80, borderRadius: '0' }} />
-                  </TableCell>
-                  <TableCell>{manga.title}</TableCell>
-                  <TableCell>{formatDate(manga.updatedAt)}</TableCell>
-                  <TableCell>
-                    <Tooltip title="Chapters">
-                      <IconButton onClick={() => handleViewChapters(manga.slug)}>
-                        <BookOutlined />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  No results found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={filteredManga.length}
-        rowsPerPage={rowsPerPage}
+      {/* Table Manga */}
+      <MangaTable
+        filteredManga={filteredManga}
         page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPage={rowsPerPage}
+        handleChangePage={handleChangePage}
+        handleChangeRowsPerPage={handleChangeRowsPerPage}
+        handleViewChapters={handleViewChapters}
       />
 
       {/* Dialog to display list of chapters */}
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth disableEnforceFocus disableAutoFocus>
-        <DialogTitle>Chapter List for {selectedManga?.title}</DialogTitle>
-        <DialogContent>
-          <TextField
-            variant="outlined"
-            placeholder="Search Chapter"
-            value={chapterSearchTerm}
-            onChange={handleChapterSearch}
-            sx={{ mb: 2, width: '100%' }}
-          />
-          <Button startIcon={<PlusOutlined />} onClick={handleAddChapter} sx={{ mb: 2 }}>
-            Add Chapter
-          </Button>
-          {filteredChapters.length > 0 ? (
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <b>No.</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Chapter Title</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Updated</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Actions</b>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredChapters
-                  .slice(chapterPage * chaptersPerPage, chapterPage * chaptersPerPage + chaptersPerPage)
-                  .map((chapter, index) => (
-                    <TableRow key={chapter.chapter_id}>
-                      {/* Sử dụng chapter.chapter_id làm key */}
-                      <TableCell>{chapterPage * chaptersPerPage + index + 1}</TableCell>
-                      <TableCell>{chapter.title}</TableCell>
-                      <TableCell>{formatDate(chapter.createdAt)}</TableCell>
-                      <TableCell>
-                        <Tooltip title="Edit">
-                          <IconButton onClick={() => handleEditChapter(chapter)}>
-                            <EditOutlined />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton color="error" onClick={() => handleDeleteChapter(chapter.chapter_id)}>
-                            <DeleteOutlined />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p>No chapters found.</p>
-          )}
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredChapters.length}
-            rowsPerPage={chaptersPerPage}
-            page={chapterPage}
-            onPageChange={handleChapterPageChange}
-            onRowsPerPageChange={handleChaptersPerPageChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      <ChapterDialog
+        open={open}
+        selectedManga={selectedManga}
+        filteredChapters={filteredChapters}
+        chapterPage={chapterPage}
+        chaptersPerPage={chaptersPerPage}
+        handleChapterSearch={handleChapterSearch}
+        handleChapterPageChange={handleChapterPageChange}
+        handleChaptersPerPageChange={handleChaptersPerPageChange}
+        handleEditChapter={handleEditChapter}
+        handleDeleteChapter={handleDeleteChapter}
+        handleAddChapter={handleAddChapter}
+        handleClose={handleClose}
+        chapterSearchTerm={chapterSearchTerm}
+      />
 
       {/* Dialog for adding/editing a chapter */}
-      <Dialog open={openChapterDialog} onClose={handleCloseChapterDialog}>
-        <DialogTitle>{currentChapter ? 'Edit Chapter' : 'Add Chapter'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Chapter Title"
-            value={newChapterTitle}
-            onChange={(e) => setNewChapterTitle(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Chapter Number"
-            value={newChapterNumber}
-            onChange={(e) => setNewChapterNumber(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <Button variant="contained" component="label">
-            {loading ? 'Uploading...' : 'Upload Chapter Images'}
-            <input type="file" multiple onChange={uploadImage} />
-          </Button>
-
-          {newChapterImage && newChapterImage.length > 0 && (
-            <>
-              <p>Uploaded Image Previews:</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                {newChapterImage.map((imageUrl, index) => (
-                  <Avatar
-                    key={index}
-                    alt={`Chapter Image ${index + 1}`}
-                    src={imageUrl}
-                    sx={{ width: 100, height: 100, mt: 2, marginRight: 2 }}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseChapterDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveChapter}>
-            {currentChapter ? 'Save Changes' : 'Add Chapter'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </div>
+      <ChapterFormDialog
+        open={openChapterDialog}
+        handleClose={handleCloseChapterDialog}
+        handleSave={handleSaveChapter}
+        currentChapter={currentChapter}
+        newChapterTitle={newChapterTitle}
+        setNewChapterTitle={setNewChapterTitle}
+        newChapterNumber={newChapterNumber}
+        setNewChapterNumber={setNewChapterNumber}
+        newChapterImages={newChapterImage}
+        setNewChapterImages={setNewChapterImage}
+        loading={loading}
+      />
+    </Container>
   );
 }

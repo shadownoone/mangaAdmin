@@ -30,6 +30,11 @@ import avatar1 from '@/assets/images/users/avatar-1.png';
 import avatar2 from '@/assets/images/users/avatar-2.png';
 import avatar3 from '@/assets/images/users/avatar-3.png';
 import avatar4 from '@/assets/images/users/avatar-4.png';
+import { useEffect, useState } from 'react';
+
+import { getStatistical } from '@/service/mangaService/index';
+import { totalUser } from '@/service/userService';
+import { getPayments } from '@/service/paymentService';
 
 // avatar style
 const avatarSX = {
@@ -51,6 +56,93 @@ const actionSX = {
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 export default function DashboardDefault() {
+  const [view, totalViews] = useState({
+    totalViews: 0,
+    percentage: 0,
+    extra: 0
+  });
+  const [manga, totalMangas] = useState({
+    totalViews: 0,
+    percentage: 0,
+    extra: 0
+  });
+
+  const [totalUsers, setTotalUsers] = useState({
+    count: 0,
+    percentage: 0,
+    extra: 0
+  });
+
+  const [sale, setTotalSale] = useState({
+    count: 0,
+    percentage: 0,
+    extra: 0
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getStatistical(); // Gọi API
+
+        console.log('Raw API Data:', data); // Log dữ liệu trả về từ API
+
+        // Ghi log để kiểm tra từng giá trị cụ thể
+        console.log('Total Views:', data.data.totalViews);
+        console.log('Total Mangas:', data.data.totalMangas);
+
+        totalViews({
+          totalViews: data.data.totalViews || 0,
+          percentage: 59.3, // Giá trị ví dụ, bạn có thể tính toán từ backend
+          extra: 35000 // Giá trị ví dụ, bạn có thể lấy từ backend nếu có
+        });
+
+        totalMangas({
+          totalMangas: data.data.totalMangas || 0,
+          percentage: 60, // Giá trị ví dụ, bạn có thể tính toán từ backend
+          extra: 35000 // Giá trị ví dụ, bạn có thể lấy từ backend nếu có
+        });
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalUsers = async () => {
+      try {
+        const response = await totalUser();
+        setTotalUsers({
+          count: response.data.totalUsers || 0,
+          percentage: 70.5, // Giá trị ví dụ, có thể lấy từ backend
+          extra: 8900 // Giá trị ví dụ, có thể lấy từ backend
+        });
+      } catch (error) {
+        console.error('Error fetching total users:', error);
+      }
+    };
+
+    fetchTotalUsers();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalPayments = async () => {
+      try {
+        const response = await getPayments();
+        console.log('Total Mangas:', response.data.totalPayments);
+        setTotalSale({
+          count: response.data.totalPayments || 0,
+          percentage: 70.5, // Giá trị ví dụ, có thể lấy từ backend
+          extra: 8900 // Giá trị ví dụ, có thể lấy từ backend
+        });
+      } catch (error) {
+        console.error('Error fetching total users:', error);
+      }
+    };
+
+    fetchTotalPayments();
+  }, []);
+
   return (
     <Grid container rowSpacing={4.5} columnSpacing={2.75}>
       {/* row 1 */}
@@ -58,16 +150,31 @@ export default function DashboardDefault() {
         <Typography variant="h5">Dashboard</Typography>
       </Grid>
       <Grid item xs={12} sm={6} md={4} lg={3}>
-        <AnalyticEcommerce title="Total Page Views" count="4,42,236" percentage={59.3} extra="35,000" />
+        <AnalyticEcommerce
+          title="Total Views"
+          count={view.totalViews.toLocaleString()}
+          percentage={view.percentage}
+          extra={view.extra.toLocaleString()}
+        />
       </Grid>
       <Grid item xs={12} sm={6} md={4} lg={3}>
-        <AnalyticEcommerce title="Total Users" count="78,250" percentage={70.5} extra="8,900" />
+        <AnalyticEcommerce
+          title="Total Users"
+          count={totalUsers.count.toLocaleString()} // Định dạng số
+          percentage={totalUsers.percentage}
+          extra={totalUsers.extra.toLocaleString()} // Định dạng số
+        />
       </Grid>
       <Grid item xs={12} sm={6} md={4} lg={3}>
-        <AnalyticEcommerce title="Total Order" count="18,800" percentage={27.4} isLoss color="warning" extra="1,943" />
+        <AnalyticEcommerce
+          title="Total Mangas"
+          count={manga.totalMangas}
+          percentage={manga.percentage}
+          extra={manga.extra.toLocaleString()}
+        />
       </Grid>
       <Grid item xs={12} sm={6} md={4} lg={3}>
-        <AnalyticEcommerce title="Total Sales" count="$35,078" percentage={27.4} isLoss color="warning" extra="$20,395" />
+        <AnalyticEcommerce title="Total Sales" count={sale.count} percentage={sale.percentage} extra={sale.extra.toLocaleString()} />
       </Grid>
 
       <Grid item md={8} sx={{ display: { sm: 'none', md: 'block', lg: 'none' } }} />

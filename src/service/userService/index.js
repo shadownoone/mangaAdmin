@@ -22,6 +22,12 @@ export const updateProfile = async (updateData) => {
   }
 };
 
+export const totalUser = async () => {
+  return await axiosClients.get('/users/total').then((res) => {
+    return res.data;
+  });
+};
+
 export const uploadSingleImage = async (base64) => {
   try {
     const response = await axiosClients.post(`/users/uploadImage`, { image: base64 });

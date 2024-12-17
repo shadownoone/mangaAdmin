@@ -28,6 +28,12 @@ export const updateManga = async (id, formData) => {
   });
 };
 
+export const getStatistical = async () => {
+  return await axiosClients.get('/mangas/statistical').then((res) => {
+    return res.data;
+  });
+};
+
 export const uploadSingleImage = async (base64) => {
   try {
     const response = await axiosClients.post(`/users/uploadImage`, { image: base64 });
