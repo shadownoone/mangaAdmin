@@ -15,7 +15,7 @@ import {
   Grid
 } from '@mui/material';
 import { BookOutlined, DeleteOutlined, FundViewOutlined } from '@ant-design/icons';
-import { getManga, getMangaBySlug, updateManga } from '@/service/mangaService';
+import { getManga, getMangaBySlug, updateManga, deleteManga } from '@/service/mangaService';
 import { formatDate } from '@/utils/formatNumber';
 import UpdateMangaDialog from '../UpdateMangaForm/UpdateMangaForm';
 
@@ -89,6 +89,24 @@ export default function MangaList() {
     }
   };
 
+  const handleDelete = async (manga_id) => {
+    const confirmDelete = window.confirm('Bạn có chắc chắn muốn xóa manga này không?');
+    if (confirmDelete) {
+      try {
+        await deleteManga(manga_id); // Gọi API để xóa
+        alert('Manga đã được xóa thành công!');
+
+        // Cập nhật danh sách manga sau khi xóa
+        const updatedListManga = listManga.filter((manga) => manga.manga_id !== manga_id);
+        setListManga(updatedListManga);
+        setFilteredManga(updatedListManga);
+      } catch (error) {
+        console.error('Lỗi khi xóa manga:', error);
+        alert('Đã xảy ra lỗi khi xóa manga.');
+      }
+    }
+  };
+
   return (
     <div>
       <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
@@ -140,7 +158,7 @@ export default function MangaList() {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                      <IconButton color="error">
+                      <IconButton color="error" onClick={() => handleDelete(manga.manga_id)}>
                         <DeleteOutlined />
                       </IconButton>
                     </Tooltip>

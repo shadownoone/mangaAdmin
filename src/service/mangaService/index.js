@@ -28,6 +28,24 @@ export const updateManga = async (id, formData) => {
   });
 };
 
+export const getMangaTop = async () => {
+  return await axiosClients.get('mangas/top').then((res) => {
+    return res.data;
+  });
+};
+
+export const getVipUsersWithPayments = async () => {
+  return await axiosClients.get('mangas/vip').then((res) => {
+    return res.data;
+  });
+};
+
+export const deleteManga = async (id) => {
+  return await axiosClients.delete(`/mangas/${id}`).then((res) => {
+    return res.data;
+  });
+};
+
 export const getStatistical = async () => {
   return await axiosClients.get('/mangas/statistical').then((res) => {
     return res.data;
